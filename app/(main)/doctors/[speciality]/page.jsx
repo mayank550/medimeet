@@ -1,30 +1,49 @@
-import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
-import { SPECIALTIES } from "@/lib/specialities";
+import { redirect } from "next/navigation";
+import { getDoctorsBySpecialty } from "@/actions/doctors-listing";
 
-export default async function DoctorsPage() {
+import { PageHeader } from "@/components/page-header";
+import { DoctorCard } from "../_components/doctor-card";
+
+export default async function DoctorSpecialtyPage({ params }) {
+  const { specialty } = await params;
+
+  // Redirect to main doctors page if no specialty is provided
+  if (!specialty) {
+    redirect("/doctors");
+  }
+
+  // Fetch doctors by specialty
+  const { doctors, error } = await getDoctorsBySpecialty(specialty);
+
+  if (error) {
+    console.error("Error fetching doctors:", error);
+  }
+
   return (
-    <>
-      <div className="flex flex-col items-center justify-center mb-8 text-center">
-        <h1 className="text-3xl font-bold text-white mb-2">Find Your Doctor</h1>
-        <p className="text-muted-foreground text-lg">
-          Browse by specialty or view all available healthcare providers
-        </p>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {SPECIALTIES.map((specialty) => (
-          <Link key={specialty.name} href={`/doctors/${specialty.name}`}>
-            <Card className="hover:border-emerald-700/40 transition-all cursor-pointer border-emerald-900/20 h-full">
-              <CardContent className="p-6 flex flex-col items-center justify-center text-center h-full">
-                <div className="w-12 h-12 rounded-full bg-emerald-900/20 flex items-center justify-center mb-4">
-                  <div className="text-emerald-400">{specialty.icon}</div>
-                </div>
-                <h3 className="font-medium text-white">{specialty.name}</h3>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
-    </>
+    <div className="space-y-5">
+      <PageHeader
+        title={specialty.split("%20").join(" ")}
+        backLink="/doctors"
+        backLabel="All Specialties"
+      />
+
+      {doctors && doctors.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {doctors.map((doctor) => (
+            <DoctorCard key={doctor.id} doctor={doctor} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <h3 className="text-xl font-medium text-white mb-2">
+            No doctors available
+          </h3>
+          <p className="text-muted-foreground">
+            There are currently no verified doctors in this specialty. Please
+            check back later or choose another specialty.
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
